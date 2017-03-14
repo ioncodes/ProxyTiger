@@ -30,6 +30,7 @@ namespace ProxyTiger
             ProxySpy();
             FreeProxyListsNet();
             ProxyListOrg();
+            MultiProxy();
         }
 
         private void HideMyName()
@@ -199,6 +200,28 @@ namespace ProxyTiger
                             LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
                         }));
                     }
+                }
+            }).Start();
+        }
+
+        private void MultiProxy()
+        {
+            string url = "http://multiproxy.org/txt_all/proxy.txt";
+            new Task(() =>
+            {
+                var wc = new WebClient();
+                wc.Headers.Add("User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
+                var source = wc.DownloadString(url);
+                foreach (
+                    Match match in
+                    Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:?([0-9]{1,5})?"))
+                {
+                    Application.Current.Dispatcher.Invoke((Action)(() =>
+                    {
+                        LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
+                        LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
+                    }));
                 }
             }).Start();
         }
