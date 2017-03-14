@@ -10,7 +10,6 @@
         mc:Ignorable="d"
         Title="ProxyTiger" Height="449" Width="710" Visibility="Visible" MinHeight="449" MinWidth="710">
     <themes:WindowChrome.Chrome>
-        <!-- This WindowChrome updates a Window so that it renders in a Metro style... custom-sized icons can even be used -->
         <themes:WindowChrome IconMargin="10,4,10,4" />
     </themes:WindowChrome.Chrome>
 
