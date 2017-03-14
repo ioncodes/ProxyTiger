@@ -39,6 +39,9 @@
                 <StatusBarItem>
                     <TextBlock Name="LblProxyStatus" Text=""/>
                 </StatusBarItem>
+                <StatusBarItem>
+                    <TextBlock Name="LblAdditionalInfo" Text=""/>
+                </StatusBarItem>
             </StatusBar>
         </DockPanel>
     </Grid>
