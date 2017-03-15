@@ -639,7 +639,7 @@ namespace ProxyTiger
                                 proxy.Type = data.proxyType;
                             }
                             sw.Stop();
-                            proxy.Ping = sw.Elapsed.ToString();
+                            proxy.Ping = sw.Elapsed.Milliseconds.ToString();
                             proxy.Status = status
                                 ? Proxy.StatusType.Working
                                 : Proxy.StatusType.NotWorking;
