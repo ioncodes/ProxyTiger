@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -614,7 +615,7 @@ namespace ProxyTiger
                 int threads = 0;
                 foreach (Proxy proxy in LvProxies.Items)
                 {
-                    while (threads >= 200) { }
+                    while (threads >= 500) { }
                     new Thread(() =>
                     {
                         try
@@ -626,8 +627,8 @@ namespace ProxyTiger
                             {
                                 checkOnline = CbCheckOnline.IsChecked.Value;
                             }));
-                            //if (!checkOnline)
-                            //    status = SocketConnect(proxy.IP, Convert.ToInt32(proxy.Port));
+                            Stopwatch sw = new Stopwatch();
+                            sw.Start();
                             if (!checkOnline)
                                 status = CheckProxy(proxy.IP, proxy.Port);
                             else
@@ -637,6 +638,8 @@ namespace ProxyTiger
                                 proxy.Ping = data.ping;
                                 proxy.Type = data.proxyType;
                             }
+                            sw.Stop();
+                            proxy.Ping = sw.Elapsed.ToString();
                             proxy.Status = status
                                 ? Proxy.StatusType.Working
                                 : Proxy.StatusType.NotWorking;
@@ -663,29 +666,6 @@ namespace ProxyTiger
                     }).Start();
                 }
             }).Start();
-        }
-
-        private bool SocketConnect(string host, int port)
-        {
-            var isSuccess = false;
-            try
-            {
-                var connsock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                connsock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, 50000);
-                var hip = IPAddress.Parse(host);
-                var ipep = new IPEndPoint(hip, port);
-                connsock.Connect(ipep);
-                if (connsock.Connected)
-                {
-                    isSuccess = true;
-                }
-                connsock.Close();
-            }
-            catch (Exception)
-            {
-                isSuccess = false;
-            }
-            return isSuccess;
         }
 
         private (bool working, string ping, string country, Proxy.ProxyType proxyType) CheckProxyOnline(string ip, string port)
