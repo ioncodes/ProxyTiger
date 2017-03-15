@@ -18,7 +18,7 @@
             <ribbon:Tab Label="Scraper">
                 <ribbon:Group Label="General">
                     <ribbon:Button x:Name="BtnScrape" ImageSourceLarge="Resources/play-button.png" Label="Scrape" Margin="5,5,5,0" Id="" Click="BtnScrape_Click"/>
-                    <ribbon:Button ImageSourceLarge="Resources/stop.png" Label="Stop" Margin="5,5,5,0"/>
+                    <ribbon:Button x:Name="BtnStop" ImageSourceLarge="Resources/stop.png" Label="Stop" Margin="5,5,5,0" Click="BtnStop_Click"/>
                 </ribbon:Group>
             </ribbon:Tab>
             <ribbon:Tab Label="Settings"/>
