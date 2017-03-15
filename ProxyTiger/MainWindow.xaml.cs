@@ -609,47 +609,60 @@ namespace ProxyTiger
             LblStatus.Text = "Scanning";
             int working = 0;
             int notWorking = 0;
-            foreach (Proxy proxy in LvProxies.Items)
+            new Thread(() =>
             {
-                new Task(() =>
+                int threads = 0;
+                foreach (Proxy proxy in LvProxies.Items)
                 {
-                    try
+                    while (threads >= 200) { }
+                    new Thread(() =>
                     {
-                        bool status = false;
-                        bool checkOnline = true;
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
+                        try
                         {
-                            checkOnline = CbCheckOnline.IsChecked.Value;
-                        }));
-                        if (!checkOnline)
-                            status = SocketConnect(proxy.IP, Convert.ToInt32(proxy.Port));
-                        else
-                        {
-                            var data = CheckProxyOnline(proxy.IP, proxy.Port);
-                            status = data.working;
-                            proxy.Ping = data.ping;
-                            proxy.Type = data.proxyType;
+                            threads++;
+                            bool status = false;
+                            bool checkOnline = true;
+                            Application.Current.Dispatcher.Invoke((Action) (() =>
+                            {
+                                checkOnline = CbCheckOnline.IsChecked.Value;
+                            }));
+                            //if (!checkOnline)
+                            //    status = SocketConnect(proxy.IP, Convert.ToInt32(proxy.Port));
+                            if (!checkOnline)
+                                status = CheckProxy(proxy.IP, proxy.Port);
+                            else
+                            {
+                                var data = CheckProxyOnline(proxy.IP, proxy.Port);
+                                status = data.working;
+                                proxy.Ping = data.ping;
+                                proxy.Type = data.proxyType;
+                            }
+                            proxy.Status = status
+                                ? Proxy.StatusType.Working
+                                : Proxy.StatusType.NotWorking;
+                            if (status) working++;
+                            else notWorking++;
                         }
-                        proxy.Status = status
-                            ? Proxy.StatusType.Working
-                            : Proxy.StatusType.NotWorking;
-                        if (status) working++;
-                        else notWorking++;
-                    }
-                    catch
-                    {
-                        proxy.Status = Proxy.StatusType.NotWorking;
-                        notWorking++;
-                    }
-                    finally
-                    {
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
+                        catch
                         {
-                            LblAdditionalInfo.Text = $"Working: {working}, Not Working: {notWorking}";
-                        }));
-                    }
-                }).Start();
-            }
+                            proxy.Status = Proxy.StatusType.NotWorking;
+                            notWorking++;
+                        }
+                        finally
+                        {
+                            try
+                            {
+                                Application.Current.Dispatcher.Invoke((Action) (() =>
+                                {
+                                    LblAdditionalInfo.Text = $"Working: {working}, Not Working: {notWorking}";
+                                }));
+                            }
+                            catch { }
+                            threads--;
+                        }
+                    }).Start();
+                }
+            }).Start();
         }
 
         private bool SocketConnect(string host, int port)
@@ -700,6 +713,36 @@ namespace ProxyTiger
             }
             bool working = !(ping == "0" && typeString == "0");
             return (working, ping, country, type);
+        }
+
+        private bool IsProxyUp(WebProxy proxy)
+        {
+            bool result = false;
+            try
+            {
+                using (WebClient webClient = new WebClient())
+                {
+                    webClient.Proxy = proxy;
+                    result = (webClient.DownloadString("https://api.ipify.org/") == proxy.Address.Host);
+                }
+            }
+            catch
+            {
+                return false;
+            }
+            return result;
+        }
+
+        private bool CheckProxy(string ip, string port)
+        {
+            try
+            {
+                return IsProxyUp(new WebProxy(ip, Convert.ToInt32(port)));
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
