@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -589,7 +590,116 @@ namespace ProxyTiger
 
         private void BtnStop_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
+            LblStatus.Text = "Stopping";
             _stop = true;
+        }
+
+        private void BtnCopyProxies_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+            var proxies = new List<string>();
+            foreach (Proxy proxy in LvProxies.Items)
+            {
+                proxies.Add($"{proxy.IP}:{proxy.Port}");
+            }
+            Clipboard.SetText(string.Join("\n", proxies));
+        }
+
+        private void BtnCheck_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+            LblStatus.Text = "Scanning";
+            int working = 0;
+            int notWorking = 0;
+            foreach (Proxy proxy in LvProxies.Items)
+            {
+                new Task(() =>
+                {
+                    try
+                    {
+                        bool status = false;
+                        bool checkOnline = true;
+                        Application.Current.Dispatcher.Invoke((Action) (() =>
+                        {
+                            checkOnline = CbCheckOnline.IsChecked.Value;
+                        }));
+                        if (!checkOnline)
+                            status = SocketConnect(proxy.IP, Convert.ToInt32(proxy.Port));
+                        else
+                        {
+                            var data = CheckProxyOnline(proxy.IP, proxy.Port);
+                            status = data.working;
+                            proxy.Ping = data.ping;
+                            proxy.Type = data.proxyType;
+                        }
+                        proxy.Status = status
+                            ? Proxy.StatusType.Working
+                            : Proxy.StatusType.NotWorking;
+                        if (status) working++;
+                        else notWorking++;
+                    }
+                    catch
+                    {
+                        proxy.Status = Proxy.StatusType.NotWorking;
+                        notWorking++;
+                    }
+                    finally
+                    {
+                        Application.Current.Dispatcher.Invoke((Action) (() =>
+                        {
+                            LblAdditionalInfo.Text = $"Working: {working}, Not Working: {notWorking}";
+                        }));
+                    }
+                }).Start();
+            }
+        }
+
+        private bool SocketConnect(string host, int port)
+        {
+            var isSuccess = false;
+            try
+            {
+                var connsock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                connsock.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.SendTimeout, 50000);
+                var hip = IPAddress.Parse(host);
+                var ipep = new IPEndPoint(hip, port);
+                connsock.Connect(ipep);
+                if (connsock.Connected)
+                {
+                    isSuccess = true;
+                }
+                connsock.Close();
+            }
+            catch (Exception)
+            {
+                isSuccess = false;
+            }
+            return isSuccess;
+        }
+
+        private (bool working, string ping, string country, Proxy.ProxyType proxyType) CheckProxyOnline(string ip, string port)
+        {
+            string url = "http://api.proxyipchecker.com/pchk.php";
+            string[] response = new WebClient().UploadString(url, $"ip={ip}&port={port}").Split(';');
+            string ping = response[0];
+            string country = response[2];
+            string typeString = response[3];
+            Proxy.ProxyType type;
+            switch (typeString)
+            {
+                case "0":
+                    type = Proxy.ProxyType.Unknown;
+                    break;
+                case "1":
+                    type = Proxy.ProxyType.Transparent;
+                    break;
+                case "2":
+                    type = Proxy.ProxyType.Anonymous;
+                    break;
+                default:
+                    type = Proxy.ProxyType.HighAnonymous;
+                    break;
+            }
+            bool working = !(ping == "0" && typeString == "0");
+            return (working, ping, country, type);
         }
     }
 }

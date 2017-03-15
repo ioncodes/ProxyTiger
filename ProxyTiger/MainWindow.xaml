@@ -14,20 +14,35 @@
     </themes:WindowChrome.Chrome>
 
     <Grid>
-        <ribbon:Ribbon Content="" HorizontalAlignment="Stretch" IsMinimizable="False" QuickAccessToolBarLocation="None" IsTitleBarAreaVisible="False" IsCollapsible="False" IsApplicationButtonVisible="False" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,289">
+        <ribbon:Ribbon Content="" HorizontalAlignment="Stretch" IsMinimizable="False" QuickAccessToolBarLocation="None" IsTitleBarAreaVisible="False" IsCollapsible="False" IsApplicationButtonVisible="False" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,294">
             <ribbon:Tab Label="Scraper">
                 <ribbon:Group Label="General">
                     <ribbon:Button x:Name="BtnScrape" ImageSourceLarge="Resources/play-button.png" Label="Scrape" Margin="5,5,5,0" Id="" Click="BtnScrape_Click"/>
                     <ribbon:Button x:Name="BtnStop" ImageSourceLarge="Resources/stop.png" Label="Stop" Margin="5,5,5,0" Click="BtnStop_Click"/>
                 </ribbon:Group>
+                <ribbon:Group Label="Proxies">
+                    <ribbon:Button x:Name="BtnCopyProxies" ImageSourceLarge="Resources/copy.png" Label="Copy" Margin="5,5,5,0" Id="" Click="BtnCopyProxies_Click"/>
+                </ribbon:Group>
             </ribbon:Tab>
-            <ribbon:Tab Label="Settings"/>
+            <ribbon:Tab Label="Checker">
+                <ribbon:Group Label="General">
+                    <ribbon:Button x:Name="BtnCheck" ImageSourceLarge="Resources/heart.png" Label="Check" Margin="5,5,5,0" Id="" Click="BtnCheck_Click"/>
+                </ribbon:Group>
+            </ribbon:Tab>
+            <ribbon:Tab Label="Settings">
+                <ribbon:Group Label="Checker">
+                    <ribbon:CheckBox x:Name="CbCheckOnline" Label="Check proxies online" IsChecked="False"/>
+                </ribbon:Group>
+            </ribbon:Tab>
         </ribbon:Ribbon>
         <ListView x:Name="LvProxies" HorizontalAlignment="Stretch" Margin="0,124,0,24" VerticalAlignment="Stretch">
             <ListView.View>
                 <GridView>
                     <GridViewColumn DisplayMemberBinding="{Binding IP}" Header="Proxy" Width="200"/>
                     <GridViewColumn DisplayMemberBinding="{Binding Port}" Header="Port" Width="50"/>
+                    <GridViewColumn DisplayMemberBinding="{Binding Status}" Header="Status" Width="150"/>
+                    <GridViewColumn DisplayMemberBinding="{Binding Ping}" Header="Ping" Width="50"/>
+                    <GridViewColumn DisplayMemberBinding="{Binding Type}" Header="Type" Width="100"/>
                 </GridView>
             </ListView.View>
         </ListView>

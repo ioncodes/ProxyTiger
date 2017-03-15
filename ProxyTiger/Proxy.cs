@@ -12,9 +12,30 @@ namespace ProxyTiger
         {
             IP = ip;
             Port = port;
+            Status = StatusType.Unknown;
+            Type = ProxyType.Unknown;
+            Ping = "Unknown";
+        }
+
+        public enum StatusType
+        {
+            Unknown,
+            Working,
+            NotWorking
+        }
+
+        public enum ProxyType
+        {
+            Unknown,
+            Transparent,
+            Anonymous,
+            HighAnonymous
         }
 
         public string IP { get; }
         public string Port { get; }
+        public StatusType Status { get; set; }
+        public ProxyType Type { get; set; }
+        public string Ping { get; set; }
     }
 }
