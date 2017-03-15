@@ -254,7 +254,29 @@ namespace ProxyTiger
 
         private void BtnImportProxies_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
-
+            OpenFileDialog ofd = new OpenFileDialog
+            {
+                InitialDirectory = @"C:\",
+                Title = "Browse Text Files",
+                CheckFileExists = true,
+                CheckPathExists = true,
+                DefaultExt = "txt",
+                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+                FilterIndex = 2,
+                RestoreDirectory = true,
+                ReadOnlyChecked = true,
+                ShowReadOnly = true
+            };
+            if (ofd.ShowDialog() == true)
+            {
+                var lines = File.ReadAllLines(ofd.FileName);
+                foreach (var proxy in lines)
+                {
+                    var p = proxy.Split(':');
+                    LvProxies.Items.Add(new Proxy(p[0], p[1]));
+                    new MsgBox("ProxyTiger", "Imported " + lines.Length + " proxies.").ShowDialog();
+                }
+            }
         }
 
         #endregion
