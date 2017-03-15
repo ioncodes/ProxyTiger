@@ -20,8 +20,13 @@
                     <ribbon:Button x:Name="BtnScrape" ImageSourceLarge="Resources/play-button.png" Label="Scrape" Margin="5,5,5,0" Id="" Click="BtnScrape_Click"/>
                     <ribbon:Button x:Name="BtnStop" ImageSourceLarge="Resources/stop.png" Label="Stop" Margin="5,5,5,0" Click="BtnStop_Click"/>
                 </ribbon:Group>
-                <ribbon:Group Label="Proxies">
+                <ribbon:Group Label="Output">
                     <ribbon:Button x:Name="BtnCopyProxies" ImageSourceLarge="Resources/copy.png" Label="Copy" Margin="5,5,5,0" Id="" Click="BtnCopyProxies_Click"/>
+                    <ribbon:Button x:Name="BtnExportProxies" ImageSourceLarge="Resources/save.png" Label="Export" Margin="5,5,5,0" Id=""/>
+                </ribbon:Group>
+                <ribbon:Group Label="Input">
+                    <ribbon:Button x:Name="BtnPasteProxies" ImageSourceLarge="Resources/paste.png" Label="Paste" Margin="5,5,5,0" Id=""/>
+                    <ribbon:Button x:Name="BtnImportProxies" ImageSourceLarge="Resources/save.png" Label="Import" Margin="5,5,5,0" Id=""/>
                 </ribbon:Group>
             </ribbon:Tab>
             <ribbon:Tab Label="Checker">
