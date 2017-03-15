@@ -20,6 +20,7 @@ namespace ProxyTiger
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region UI
         // http://sguru.org/files/proxy-source_sguru.txt
         private readonly List<Task> _tasks = new List<Task>();
         private bool _stop = false;
@@ -27,6 +28,142 @@ namespace ProxyTiger
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void BtnStop_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+            LblStatus.Text = "Stopping";
+            _stop = true;
+        }
+
+        private void BtnCopyProxies_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+            var proxies = new List<string>();
+            foreach (Proxy proxy in LvProxies.Items)
+            {
+                proxies.Add($"{proxy.IP}:{proxy.Port}");
+            }
+            Clipboard.SetText(string.Join("\n", proxies));
+        }
+
+        private void BtnCheck_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+            LblStatus.Text = "Scanning";
+            int working = 0;
+            int notWorking = 0;
+            new Thread(() =>
+            {
+                int threads = 0;
+                foreach (Proxy proxy in LvProxies.Items)
+                {
+                    while (threads >= 500) { }
+                    new Thread(() =>
+                    {
+                        try
+                        {
+                            threads++;
+                            bool status = false;
+                            bool checkOnline = true;
+                            Application.Current.Dispatcher.Invoke((Action)(() =>
+                            {
+                                checkOnline = CbCheckOnline.IsChecked.Value;
+                            }));
+                            Stopwatch sw = new Stopwatch();
+                            sw.Start();
+                            if (!checkOnline)
+                                status = CheckProxy(proxy.IP, proxy.Port);
+                            else
+                            {
+                                var data = CheckProxyOnline(proxy.IP, proxy.Port);
+                                status = data.working;
+                                proxy.Ping = data.ping;
+                                proxy.Type = data.proxyType;
+                            }
+                            sw.Stop();
+                            proxy.Ping = sw.Elapsed.Milliseconds.ToString();
+                            proxy.Status = status
+                                ? Proxy.StatusType.Working
+                                : Proxy.StatusType.NotWorking;
+                            if (status) working++;
+                            else notWorking++;
+                        }
+                        catch
+                        {
+                            proxy.Status = Proxy.StatusType.NotWorking;
+                            notWorking++;
+                        }
+                        finally
+                        {
+                            try
+                            {
+                                Application.Current.Dispatcher.Invoke((Action)(() =>
+                                {
+                                    LblAdditionalInfo.Text = $"Working: {working}, Not Working: {notWorking}";
+                                }));
+                            }
+                            catch { }
+                            threads--;
+                        }
+                    }).Start();
+                }
+            }).Start();
+        }
+
+        private (bool working, string ping, string country, Proxy.ProxyType proxyType) CheckProxyOnline(string ip, string port)
+        {
+            string url = "http://api.proxyipchecker.com/pchk.php";
+            string[] response = new WebClient().UploadString(url, $"ip={ip}&port={port}").Split(';');
+            string ping = response[0];
+            string country = response[2];
+            string typeString = response[3];
+            Proxy.ProxyType type;
+            switch (typeString)
+            {
+                case "0":
+                    type = Proxy.ProxyType.Unknown;
+                    break;
+                case "1":
+                    type = Proxy.ProxyType.Transparent;
+                    break;
+                case "2":
+                    type = Proxy.ProxyType.Anonymous;
+                    break;
+                default:
+                    type = Proxy.ProxyType.HighAnonymous;
+                    break;
+            }
+            bool working = !(ping == "0" && typeString == "0");
+            return (working, ping, country, type);
+        }
+
+        private bool IsProxyUp(WebProxy proxy)
+        {
+            bool result = false;
+            try
+            {
+                using (WebClient webClient = new WebClient())
+                {
+                    webClient.Proxy = proxy;
+                    result = (webClient.DownloadString("https://api.ipify.org/") == proxy.Address.Host);
+                }
+            }
+            catch
+            {
+                return false;
+            }
+            return result;
+        }
+
+        private bool CheckProxy(string ip, string port)
+        {
+            try
+            {
+                return IsProxyUp(new WebProxy(ip, Convert.ToInt32(port)));
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private void BtnScrape_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
@@ -50,6 +187,7 @@ namespace ProxyTiger
             _tasks.Add(WebBox());
             _tasks.Add(HOne());
             _tasks.AddRange(RmcCurdy());
+            _tasks.Add(WorkingProxies());
             foreach (var task in _tasks)
             {
                 task.Start();
@@ -62,6 +200,10 @@ namespace ProxyTiger
                 MessageBox.Show("Done");
             }).Start();
         }
+
+        #endregion
+
+        #region Modules
 
         private Task HideMyName()
         {
@@ -589,140 +731,34 @@ namespace ProxyTiger
             return task;
         }
 
-        private void BtnStop_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        private Task WorkingProxies()
         {
-            LblStatus.Text = "Stopping";
-            _stop = true;
-        }
-
-        private void BtnCopyProxies_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
-        {
-            var proxies = new List<string>();
-            foreach (Proxy proxy in LvProxies.Items)
+            string url = "http://workingproxies.org/?page=";
+            Task task = new Task(() =>
             {
-                proxies.Add($"{proxy.IP}:{proxy.Port}");
-            }
-            Clipboard.SetText(string.Join("\n", proxies));
-        }
-
-        private void BtnCheck_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
-        {
-            LblStatus.Text = "Scanning";
-            int working = 0;
-            int notWorking = 0;
-            new Thread(() =>
-            {
-                int threads = 0;
-                foreach (Proxy proxy in LvProxies.Items)
+                for (int i = 0; i < 40; i++)
                 {
-                    while (threads >= 500) { }
-                    new Thread(() =>
+                    if (_stop)
+                        break;
+                    var wc = new WebClient();
+                    wc.Headers.Add("User-Agent",
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
+                    var source = wc.DownloadString(url.Replace("{0}", i.ToString()));
+                    foreach (
+                        Match match in
+                        Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})[<\\/td>\\n]+.*<td>([0-9]{1,5})<"))
                     {
-                        try
+                        Application.Current.Dispatcher.Invoke((Action)(() =>
                         {
-                            threads++;
-                            bool status = false;
-                            bool checkOnline = true;
-                            Application.Current.Dispatcher.Invoke((Action) (() =>
-                            {
-                                checkOnline = CbCheckOnline.IsChecked.Value;
-                            }));
-                            Stopwatch sw = new Stopwatch();
-                            sw.Start();
-                            if (!checkOnline)
-                                status = CheckProxy(proxy.IP, proxy.Port);
-                            else
-                            {
-                                var data = CheckProxyOnline(proxy.IP, proxy.Port);
-                                status = data.working;
-                                proxy.Ping = data.ping;
-                                proxy.Type = data.proxyType;
-                            }
-                            sw.Stop();
-                            proxy.Ping = sw.Elapsed.Milliseconds.ToString();
-                            proxy.Status = status
-                                ? Proxy.StatusType.Working
-                                : Proxy.StatusType.NotWorking;
-                            if (status) working++;
-                            else notWorking++;
-                        }
-                        catch
-                        {
-                            proxy.Status = Proxy.StatusType.NotWorking;
-                            notWorking++;
-                        }
-                        finally
-                        {
-                            try
-                            {
-                                Application.Current.Dispatcher.Invoke((Action) (() =>
-                                {
-                                    LblAdditionalInfo.Text = $"Working: {working}, Not Working: {notWorking}";
-                                }));
-                            }
-                            catch { }
-                            threads--;
-                        }
-                    }).Start();
+                            LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
+                            LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
+                        }));
+                    }
                 }
-            }).Start();
+            });
+            return task;
         }
 
-        private (bool working, string ping, string country, Proxy.ProxyType proxyType) CheckProxyOnline(string ip, string port)
-        {
-            string url = "http://api.proxyipchecker.com/pchk.php";
-            string[] response = new WebClient().UploadString(url, $"ip={ip}&port={port}").Split(';');
-            string ping = response[0];
-            string country = response[2];
-            string typeString = response[3];
-            Proxy.ProxyType type;
-            switch (typeString)
-            {
-                case "0":
-                    type = Proxy.ProxyType.Unknown;
-                    break;
-                case "1":
-                    type = Proxy.ProxyType.Transparent;
-                    break;
-                case "2":
-                    type = Proxy.ProxyType.Anonymous;
-                    break;
-                default:
-                    type = Proxy.ProxyType.HighAnonymous;
-                    break;
-            }
-            bool working = !(ping == "0" && typeString == "0");
-            return (working, ping, country, type);
-        }
-
-        private bool IsProxyUp(WebProxy proxy)
-        {
-            bool result = false;
-            try
-            {
-                using (WebClient webClient = new WebClient())
-                {
-                    webClient.Proxy = proxy;
-                    result = (webClient.DownloadString("https://api.ipify.org/") == proxy.Address.Host);
-                }
-            }
-            catch
-            {
-                return false;
-            }
-            return result;
-        }
-
-        private bool CheckProxy(string ip, string port)
-        {
-            try
-            {
-                return IsProxyUp(new WebProxy(ip, Convert.ToInt32(port)));
-            }
-            catch
-            {
-                return false;
-            }
-        }
+        #endregion
     }
 }
