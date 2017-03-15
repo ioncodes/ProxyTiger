@@ -8,13 +8,13 @@
     xmlns:themes="http://schemas.actiprosoftware.com/winfx/xaml/themes"
     x:Class="ProxyTiger.MainWindow"
         mc:Ignorable="d"
-        Title="ProxyTiger" Height="449" Width="710" Visibility="Visible" MinHeight="449" MinWidth="710">
+        Title="ProxyTiger" Height="491.667" Width="710" Visibility="Visible" MinHeight="449" MinWidth="710" Icon="Resources/tiger.png">
     <themes:WindowChrome.Chrome>
         <themes:WindowChrome IconMargin="10,4,10,4" />
     </themes:WindowChrome.Chrome>
 
     <Grid>
-        <ribbon:Ribbon Content="" HorizontalAlignment="Stretch" IsMinimizable="False" QuickAccessToolBarLocation="None" IsTitleBarAreaVisible="False" IsCollapsible="False" IsApplicationButtonVisible="False" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,294">
+        <ribbon:Ribbon Content="" HorizontalAlignment="Stretch" IsMinimizable="False" QuickAccessToolBarLocation="None" IsTitleBarAreaVisible="False" IsCollapsible="False" IsApplicationButtonVisible="False" RenderTransformOrigin="0.5,0.5" Margin="0,0,0,330" MinHeight="131" MinWidth="702">
             <ribbon:Tab Label="Scraper">
                 <ribbon:Group Label="General">
                     <ribbon:Button x:Name="BtnScrape" ImageSourceLarge="Resources/play-button.png" Label="Scrape" Margin="5,5,5,0" Id="" Click="BtnScrape_Click"/>
@@ -22,11 +22,11 @@
                 </ribbon:Group>
                 <ribbon:Group Label="Output">
                     <ribbon:Button x:Name="BtnCopyProxies" ImageSourceLarge="Resources/copy.png" Label="Copy" Margin="5,5,5,0" Id="" Click="BtnCopyProxies_Click"/>
-                    <ribbon:Button x:Name="BtnExportProxies" ImageSourceLarge="Resources/save.png" Label="Export" Margin="5,5,5,0" Id=""/>
+                    <ribbon:Button x:Name="BtnExportProxies" ImageSourceLarge="Resources/save.png" Label="Export" Margin="5,5,5,0" Id="" Click="BtnExportProxies_Click"/>
                 </ribbon:Group>
                 <ribbon:Group Label="Input">
-                    <ribbon:Button x:Name="BtnPasteProxies" ImageSourceLarge="Resources/paste.png" Label="Paste" Margin="5,5,5,0" Id=""/>
-                    <ribbon:Button x:Name="BtnImportProxies" ImageSourceLarge="Resources/save.png" Label="Import" Margin="5,5,5,0" Id=""/>
+                    <ribbon:Button x:Name="BtnPasteProxies" ImageSourceLarge="Resources/paste.png" Label="Paste" Margin="5,5,5,0" Id="" Click="BtnPasteProxies_Click"/>
+                    <ribbon:Button x:Name="BtnImportProxies" ImageSourceLarge="Resources/save.png" Label="Import" Margin="5,5,5,0" Id="" Click="BtnImportProxies_Click"/>
                 </ribbon:Group>
             </ribbon:Tab>
             <ribbon:Tab Label="Checker">

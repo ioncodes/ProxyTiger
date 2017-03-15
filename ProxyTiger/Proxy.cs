@@ -8,13 +8,15 @@ namespace ProxyTiger
 {
     public class Proxy
     {
+        private string _ping;
+
         public Proxy(string ip, string port)
         {
             IP = ip;
             Port = port;
             Status = StatusType.Unknown;
             Type = ProxyType.Unknown;
-            Ping = "Unknown";
+            Ping = "-1";
         }
 
         public enum StatusType
@@ -36,6 +38,11 @@ namespace ProxyTiger
         public string Port { get; }
         public StatusType Status { get; set; }
         public ProxyType Type { get; set; }
-        public string Ping { get; set; }
+
+        public string Ping
+        {
+            get { return _ping; }
+            set { _ping = value + "ms"; }
+        }
     }
 }

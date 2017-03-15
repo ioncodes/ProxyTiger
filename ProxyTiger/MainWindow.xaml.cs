@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -12,6 +13,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Xml.Serialization;
 using ActiproSoftware.Windows.Themes;
+using Microsoft.Win32;
 
 namespace ProxyTiger
 {
@@ -212,10 +214,47 @@ namespace ProxyTiger
             new Task(async () =>
             {
                 await Task.WhenAll(_tasks.ToArray());
-                Application.Current.Dispatcher.Invoke((Action) (() => { LblStatus.Text = "Idle"; }));
                 _stop = false;
-                MessageBox.Show("Done");
+                Application.Current.Dispatcher.Invoke((Action) (() =>
+                {
+                    LblStatus.Text = "Idle";
+                    new MsgBox("ProxyTiger", "Scraped " + LvProxies.Items.Count + " proxies.").ShowDialog();
+                }));
             }).Start();
+        }
+
+        private void BtnExportProxies_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+            var proxies = (from Proxy proxy in LvProxies.Items select $"{proxy.IP}:{proxy.Port}").ToList();
+            SaveFileDialog sfd = new SaveFileDialog
+            {
+                InitialDirectory = @"C:\",
+                Title = "Save proxies",
+                DefaultExt = "txt",
+                Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+                FilterIndex = 1,
+                RestoreDirectory = true
+            };
+
+            if (sfd.ShowDialog() == true)
+            {
+                File.WriteAllLines(sfd.FileName, proxies);
+                new MsgBox("ProxyTiger", "Wrote successfully " + proxies.Count + " proxies.").Show();
+            }
+        }
+
+        private void BtnPasteProxies_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+            var proxies = Clipboard.GetText().Split('\n').Select(proxy => proxy.Split(':')).Select(p => new Proxy(p[0], p[1])).ToList();
+            foreach (var proxy in proxies)
+            {
+                LvProxies.Items.Add(proxy);
+            }
+        }
+
+        private void BtnImportProxies_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+
         }
 
         #endregion
@@ -926,6 +965,8 @@ namespace ProxyTiger
                 }
                 foreach (var file in urls)
                 {
+                    if (_stop)
+                        break;
                     string source = new WebClient().DownloadString(file);
                     foreach (
                         Match match in
@@ -989,7 +1030,8 @@ namespace ProxyTiger
             {
                 foreach (var url in urls)
                 {
-
+                    if (_stop)
+                        break;
                     var wc = new WebClient();
                     wc.Headers.Add("User-Agent",
                         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
