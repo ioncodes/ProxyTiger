@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace ProxyTiger
 {
@@ -16,7 +18,8 @@ namespace ProxyTiger
             Port = port;
             Status = StatusType.Unknown;
             Type = ProxyType.Unknown;
-            Ping = "-1";
+            Ping = "";
+            Color = new SolidColorBrush(Colors.White);
         }
 
         public enum StatusType
@@ -29,7 +32,7 @@ namespace ProxyTiger
         public enum ProxyType
         {
             Unknown,
-            Transparent,
+            Normal,
             Anonymous,
             HighAnonymous
         }
@@ -38,11 +41,22 @@ namespace ProxyTiger
         public string Port { get; }
         public StatusType Status { get; set; }
         public ProxyType Type { get; set; }
+        public SolidColorBrush Color {get; set;}
 
         public string Ping
         {
             get { return _ping; }
-            set { _ping = value + "ms"; }
+            set
+            {
+                if (value == "")
+                {
+                    _ping = "";
+                }
+                else
+                {
+                    _ping = value + "ms";
+                }
+            }
         }
     }
 }

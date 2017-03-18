@@ -35,8 +35,9 @@
                 </ribbon:Group>
             </ribbon:Tab>
             <ribbon:Tab Label="Settings">
-                <ribbon:Group Label="Checker">
-                    <ribbon:CheckBox x:Name="CbCheckOnline" Label="Check proxies online" IsChecked="False"/>
+                <ribbon:Group Label="Checker" IsCollapsible="True">
+                    <ribbon:CheckBox x:Name="CbCheckOnline" Label="Check proxies online" IsChecked="False" Margin="5,5,0,0"/>
+                    <Slider Width="103" Height="20" Margin="5,5,0,0"/>
                 </ribbon:Group>
             </ribbon:Tab>
         </ribbon:Ribbon>
@@ -45,7 +46,13 @@
                 <GridView>
                     <GridViewColumn DisplayMemberBinding="{Binding IP}" Header="Proxy" Width="200"/>
                     <GridViewColumn DisplayMemberBinding="{Binding Port}" Header="Port" Width="50"/>
-                    <GridViewColumn DisplayMemberBinding="{Binding Status}" Header="Status" Width="150"/>
+                    <GridViewColumn DisplayMemberBinding="{Binding Status}" Header="Status" Width="150">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock x:Name="Txt" Text="{Binding Color}" Foreground="Purple" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                     <GridViewColumn DisplayMemberBinding="{Binding Ping}" Header="Ping" Width="50"/>
                     <GridViewColumn DisplayMemberBinding="{Binding Type}" Header="Type" Width="100"/>
                 </GridView>

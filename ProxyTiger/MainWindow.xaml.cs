@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Xml.Serialization;
 using ActiproSoftware.Windows.Themes;
 using Microsoft.Win32;
+using Color = System.Drawing.Color;
 
 namespace ProxyTiger
 {
@@ -62,7 +63,7 @@ namespace ProxyTiger
                 int threads = 0;
                 foreach (Proxy proxy in LvProxies.Items)
                 {
-                    while (threads >= 500)
+                    while (threads >= 200)
                     {
                     }
                     new Thread(() =>
@@ -70,28 +71,25 @@ namespace ProxyTiger
                         try
                         {
                             threads++;
-                            bool status = false;
-                            bool checkOnline = true;
-                            Application.Current.Dispatcher.Invoke(
-                                (Action) (() => { checkOnline = CbCheckOnline.IsChecked.Value; }));
                             Stopwatch sw = new Stopwatch();
                             sw.Start();
-                            if (!checkOnline)
-                                status = CheckProxy(proxy.IP, proxy.Port);
+                            var status = CheckProxy(proxy.IP, proxy.Port);
+                            sw.Stop();
+                            if(status != Proxy.ProxyType.Unknown)
+                            {
+                                proxy.Ping = sw.Elapsed.Milliseconds.ToString();
+                                proxy.Type = status;
+                                proxy.Color = new SolidColorBrush(Colors.Green);
+                                working++;
+                            }
                             else
                             {
-                                var data = CheckProxyOnline(proxy.IP, proxy.Port);
-                                status = data.working;
-                                proxy.Ping = data.ping;
-                                proxy.Type = data.proxyType;
+                                proxy.Color = new SolidColorBrush(Colors.Red);
+                                notWorking++;
                             }
-                            sw.Stop();
-                            proxy.Ping = sw.Elapsed.Milliseconds.ToString();
-                            proxy.Status = status
+                            proxy.Status = status != Proxy.ProxyType.Unknown
                                 ? Proxy.StatusType.Working
                                 : Proxy.StatusType.NotWorking;
-                            if (status) working++;
-                            else notWorking++;
                         }
                         catch
                         {
@@ -119,62 +117,41 @@ namespace ProxyTiger
             }).Start();
         }
 
-        private (bool working, string ping, string country, Proxy.ProxyType proxyType) CheckProxyOnline(string ip,
-            string port)
+        private Proxy.ProxyType IsProxyUp(WebProxy proxy)
         {
-            string url = "http://api.proxyipchecker.com/pchk.php";
-            string[] response = new WebClient().UploadString(url, $"ip={ip}&port={port}").Split(';');
-            string ping = response[0];
-            string country = response[2];
-            string typeString = response[3];
-            Proxy.ProxyType type;
-            switch (typeString)
-            {
-                case "0":
-                    type = Proxy.ProxyType.Unknown;
-                    break;
-                case "1":
-                    type = Proxy.ProxyType.Transparent;
-                    break;
-                case "2":
-                    type = Proxy.ProxyType.Anonymous;
-                    break;
-                default:
-                    type = Proxy.ProxyType.HighAnonymous;
-                    break;
-            }
-            bool working = !(ping == "0" && typeString == "0");
-            return (working, ping, country, type);
-        }
-
-        private bool IsProxyUp(WebProxy proxy)
-        {
-            bool result = false;
+            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create("http://samair.ru/anonymity-test/");
             try
             {
-                using (WebClient webClient = new WebClient())
+                httpWebRequest.Timeout = 5000;
+                httpWebRequest.Proxy = proxy;
+                HttpWebResponse httpWebResponse = (HttpWebResponse) httpWebRequest.GetResponse();
+                StreamReader streamReader = new StreamReader(httpWebResponse.GetResponseStream());
+                string text2 = streamReader.ReadToEnd();
+                if (!text2.Contains("Your IP is detected"))
                 {
-                    webClient.Proxy = proxy;
-                    result = (webClient.DownloadString("https://api.ipify.org/") == proxy.Address.Host);
+                    if (text2.Contains(">high-anonymous (elite) proxy</"))
+                    {
+                        return Proxy.ProxyType.HighAnonymous;
+                    }
+                    else
+                    {
+                        return Proxy.ProxyType.Anonymous;
+                    }
+                }
+                else
+                {
+                    return Proxy.ProxyType.Normal;
                 }
             }
             catch
             {
-                return false;
+                return Proxy.ProxyType.Unknown;
             }
-            return result;
         }
 
-        private bool CheckProxy(string ip, string port)
+        private Proxy.ProxyType CheckProxy(string ip, string port)
         {
-            try
-            {
-                return IsProxyUp(new WebProxy(ip, Convert.ToInt32(port)));
-            }
-            catch
-            {
-                return false;
-            }
+            return IsProxyUp(new WebProxy(ip, Convert.ToInt32(port)));
         }
 
         private void BtnScrape_Click(object sender,
