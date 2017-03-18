@@ -991,9 +991,14 @@ namespace ProxyTiger
                 wc.Headers.Add("User-Agent",
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
                 var source = wc.DownloadString(url);
+                var matches = Regex.Matches(source, "<content *.+<\\/content>");
+                string content = "";
+                for(int i = 0; i < 3; i++) {
+                    content += matches[i].Value;
+                }
                 foreach (
                     Match match in
-                    Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:([0-9]{1,5})"))
+                    Regex.Matches(content, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}):([0-9]{1,5})"))
                 {
                     Application.Current.Dispatcher.Invoke((Action)(() =>
                     {
