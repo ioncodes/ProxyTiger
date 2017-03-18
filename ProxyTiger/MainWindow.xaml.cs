@@ -158,32 +158,25 @@ namespace ProxyTiger
             ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
             LblStatus.Text = "Scraping";
-            _tasks.Add(HideMyName());
-            _tasks.Add(SamairRu());
-            _tasks.Add(GetProxyJp());
-            _tasks.Add(ProxyDb());
-            _tasks.Add(ProxySpy());
-            _tasks.Add(ProxyListOrg());
-            _tasks.Add(NnTime());
-            _tasks.Add(MultiProxy());
-            _tasks.Add(ProxyMore());
-            _tasks.Add(FreeTao());
-            _tasks.Add(MorphIo());
-            _tasks.Add(IpAddress());
-            _tasks.Add(MeilleurVpn());
-            _tasks.Add(HideMyIp());
-            _tasks.Add(WebBox());
-            _tasks.Add(HOne());
-            _tasks.AddRange(RmcCurdy());
-            _tasks.Add(WorkingProxies());
-            _tasks.Add(SslProxies());
-            _tasks.Add(FreeProxyListsNet());
-            _tasks.Add(CloudProxies());
-            _tasks.Add(ProxyApe());
-            _tasks.Add(ProxyListMe());
-            _tasks.Add(OrcaTech());
-            _tasks.Add(SslProxies24());
-            _tasks.Add(AliveProxy());
+            _tasks.Add(HideMyName()); //216 out of 785
+            _tasks.Add(SamairRu()); //144 out of 600
+            _tasks.Add(GetProxyJp()); //6 out of 150...all anon wtf
+            _tasks.Add(ProxyDb()); //90 out of 950
+            _tasks.Add(ProxySpy()); //67 out of 300
+            _tasks.Add(ProxyListOrg()); //45 out of 140
+            _tasks.Add(NnTime()); //80 out of 600
+            _tasks.Add(ProxyMore()); //14 out of 125
+            _tasks.Add(FreeTao()); //4 out of 27
+            _tasks.Add(MorphIo()); //204 out of 2046
+            _tasks.Add(IpAddress()); //11 out of 50
+            _tasks.Add(MeilleurVpn()); //40 out of 180
+            _tasks.Add(HideMyIp()); //80 out of 445
+            _tasks.AddRange(RmcCurdy()); //142 out of 2091
+            _tasks.Add(SslProxies()); //52 out of 100
+            _tasks.Add(ProxyApe()); //213 out of 3100
+            _tasks.Add(OrcaTech()); // 1200 out of 3000
+            _tasks.Add(SslProxies24()); // we need to only scrape from the day of scrapings posts not all time
+            _tasks.Add(AliveProxy()); //23 out of 223
             foreach (var task in _tasks)
             {
                 task.Start();
