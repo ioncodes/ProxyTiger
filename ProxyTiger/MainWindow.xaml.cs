@@ -984,15 +984,11 @@ namespace ProxyTiger
                 wc.Headers.Add("User-Agent",
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
                 var source = wc.DownloadString(url);
-                var matches = Regex.Matches(source, @"<content *.+<\/content>");
+                var matches = Regex.Matches(source, @"<content[^C]*");
                 string content = "";
-                int counter = 0;
-                foreach(Match match in matches) {
-                    if(counter == 2) break;
-                    content += match.Value;
-                    counter++;
+                for(int i = 0; i < 3; i++) {
+                    content += matches[i].Value;
                 }
-                if(counter < 2) throw new Exception("there are less than 3 found wtf");
                 foreach (
                     Match match in
                     Regex.Matches(content, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}):([0-9]{1,5})"))
