@@ -160,18 +160,13 @@ namespace ProxyTiger
             LblStatus.Text = "Scraping";
             _tasks.Add(HideMyName()); //216 out of 785
             _tasks.Add(SamairRu()); //144 out of 600
-            _tasks.Add(GetProxyJp()); //6 out of 150...all anon wtf
             _tasks.Add(ProxyDb()); //90 out of 950
             _tasks.Add(ProxySpy()); //67 out of 300
             _tasks.Add(ProxyListOrg()); //45 out of 140
-            _tasks.Add(NnTime()); //80 out of 600
-            _tasks.Add(ProxyMore()); //14 out of 125
-            _tasks.Add(FreeTao()); //4 out of 27
             _tasks.Add(MorphIo()); //204 out of 2046
             _tasks.Add(IpAddress()); //11 out of 50
             _tasks.Add(MeilleurVpn()); //40 out of 180
             _tasks.Add(HideMyIp()); //80 out of 445
-            _tasks.AddRange(RmcCurdy()); //142 out of 2091
             _tasks.Add(SslProxies()); //52 out of 100
             _tasks.Add(ProxyApe()); //213 out of 3100
             _tasks.Add(OrcaTech()); // 1200 out of 3000
