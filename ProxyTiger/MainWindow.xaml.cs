@@ -172,6 +172,7 @@ namespace ProxyTiger
             _tasks.Add(OrcaTech()); // 1200 out of 3000
             _tasks.Add(SslProxies24()); // we need to only scrape from the day of scrapings posts not all time
             _tasks.Add(AliveProxy()); //23 out of 223
+            _tasks.Add(UserProxy());
             foreach (var task in _tasks)
             {
                 task.Start();
@@ -304,34 +305,6 @@ namespace ProxyTiger
             return task;
         }
 
-        private Task GetProxyJp()
-        {
-            string url = "http://www.getproxy.jp/en/default/";
-            Task task = new Task(() =>
-            {
-                for (int i = 1; i <= 5; i++)
-                {
-                    if (_stop)
-                        break;
-                    var wc = new WebClient();
-                    wc.Headers.Add("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                    var source = wc.DownloadString(url + i);
-                    foreach (
-                        Match match in
-                        Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:?([0-9]{1,5})?"))
-                    {
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
-                        {
-                            LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                            LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                        }));
-                    }
-                }
-            });
-            return task;
-        }
-
         private Task ProxyDb()
         {
             string url = "http://proxydb.net/?offset=";
@@ -395,40 +368,6 @@ namespace ProxyTiger
             return task;
         }
 
-        private Task FreeProxyListsNet()
-        {
-            string url = "http://www.freeproxylists.net/?page=";
-            Task task = new Task(() =>
-            {
-                for (int i = 0; i <= 15; i++)
-                {
-                    if (_stop)
-                        break;
-                    var wc = new WebClient();
-                    wc.Headers.Add("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                    var source = wc.DownloadString(url + i);
-
-                    foreach (
-                        Match match in
-                        Regex.Matches(source,
-                            "IPDecode\\(\"([%0-9a-z]+)\"\\)<\\/script><\\/td><td align=\"center\">([0-9]{1,5})<"))
-                    {
-                        string ip =
-                            Regex.Match(match.Value, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})").Groups[1]
-                                .Value;
-                        string port = match.Groups[2].Value;
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
-                        {
-                            LvProxies.Items.Add(new Proxy(ip, port));
-                            LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                        }));
-                    }
-                }
-            });
-            return task;
-        }
-
         private Task ProxyListOrg()
         {
             string url = "https://proxy-list.org/german/search.php?search=&country=any&type=any&port=any&ssl=any&p=";
@@ -451,198 +390,6 @@ namespace ProxyTiger
                             string[] proxy =
                                 Encoding.UTF8.GetString(Convert.FromBase64String(match.Groups[1].Value)).Split(':');
                             LvProxies.Items.Add(new Proxy(proxy[0], proxy[1]));
-                            LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                        }));
-                    }
-                }
-            });
-            return task;
-        }
-
-        private Task NnTime()
-        {
-            string url = "http://nntime.com/proxy-list-{0}.htm";
-            Task task = new Task(() =>
-            {
-                for (int i = 1; i <= 18; i++)
-                {
-                    if (_stop)
-                        break;
-                    var wc = new WebClient();
-                    wc.Headers.Add("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                    string id = "";
-                    if (i >= 1 && i <= 9)
-                        id = "0" + i;
-                    else
-                        id = i.ToString();
-                    var source = wc.DownloadString(url.Replace("{0}", id));
-                    string keyStore =
-                        Regex.Match(source, "<script src=\"js1\\/.*<\\/script><script type=.*>\\n(.*);").Groups[1].Value;
-                    Dictionary<string, int> keys =
-                        keyStore.Split(';')
-                            .Select(key => key.Split('='))
-                            .ToDictionary(k => k[0], k => Convert.ToInt32(k[1]));
-                    foreach (
-                        Match match in
-                        Regex.Matches(source,
-                            ">([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})[<\\w =\"\\/>]+\\.write\\(\":\"([a-z+]+)\\)")
-                    )
-                    {
-                        string ip = match.Groups[1].Value;
-                        string[] values = match.Groups[2].Value.Split('+');
-                        string port = values.Where(value => value != "")
-                            .Aggregate("", (current, value) => current + keys[value]);
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
-                        {
-                            LvProxies.Items.Add(new Proxy(ip, port));
-                            LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                        }));
-                    }
-                }
-            });
-            return task;
-        }
-
-        private Task MultiProxy()
-        {
-            string url = "http://multiproxy.org/txt_all/proxy.txt";
-            Task task = new Task(() =>
-            {
-                var wc = new WebClient();
-                wc.Headers.Add("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                var source = wc.DownloadString(url);
-                foreach (
-                    Match match in
-                    Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:?([0-9]{1,5})?"))
-                {
-                    Application.Current.Dispatcher.Invoke((Action) (() =>
-                    {
-                        LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                        LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                    }));
-                }
-            });
-            return task;
-        }
-
-        private List<Task> RmcCurdy()
-        {
-            string url = "https://www.rmccurdy.com/scripts/proxy/output/http/good.txt";
-            var tasks = new List<Task>();
-            Task task = new Task(() =>
-            {
-                var wc = new WebClient();
-                wc.Headers.Add("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                var source = wc.DownloadString(url);
-                foreach (
-                    Match match in
-                    Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:?([0-9]{1,5})?"))
-                {
-                    Application.Current.Dispatcher.Invoke((Action) (() =>
-                    {
-                        LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                        LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                    }));
-                }
-            });
-            tasks.Add(task);
-
-            url = "https://www.rmccurdy.com/scripts/proxy/output/socks/good.txt";
-            task = new Task(() =>
-            {
-                var wc = new WebClient();
-                wc.Headers.Add("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                var source = wc.DownloadString(url);
-                foreach (
-                    Match match in
-                    Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:?([0-9]{1,5})?"))
-                {
-                    Application.Current.Dispatcher.Invoke((Action) (() =>
-                    {
-                        LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                        LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                    }));
-                }
-            });
-            tasks.Add(task);
-
-            url = "https://www.rmccurdy.com/scripts/proxy/good.txt";
-            task = new Task(() =>
-            {
-                var wc = new WebClient();
-                wc.Headers.Add("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                var source = wc.DownloadString(url);
-                foreach (
-                    Match match in
-                    Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:?([0-9]{1,5})?"))
-                {
-                    Application.Current.Dispatcher.Invoke((Action) (() =>
-                    {
-                        LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                        LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                    }));
-                }
-            });
-            tasks.Add(task);
-            return tasks;
-        }
-
-        private Task ProxyMore()
-        {
-            string url = "http://www.proxymore.com/proxy-list-{0}.html";
-            Task task = new Task(() =>
-            {
-                for (int i = 1; i <= 5; i++)
-                {
-                    if (_stop)
-                        break;
-                    var wc = new WebClient();
-                    wc.Headers.Add("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                    var source = wc.DownloadString(url.Replace("{0}", i.ToString()));
-                    foreach (
-                        Match match in
-                        Regex.Matches(source,
-                            "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})<\\/td>\\s+<td align=\"center\">([0-9]{1,5})<\\/td>")
-                    )
-                    {
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
-                        {
-                            LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                            LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                        }));
-                    }
-                }
-            });
-            return task;
-        }
-
-        private Task FreeTao()
-        {
-            string url = "http://freetao.org/socks/index.php?act=list&port=&type=&country=&page=";
-            Task task = new Task(() =>
-            {
-                for (int i = 1; i <= 2; i++)
-                {
-                    if (_stop)
-                        break;
-                    var wc = new WebClient();
-                    wc.Headers.Add("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                    var source = wc.DownloadString(url + i);
-                    foreach (
-                        Match match in
-                        Regex.Matches(source, ">([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})[\\S]+\\n<td>([0-9]{1,5})<")
-                    )
-                    {
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
-                        {
-                            LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
                             LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
                         }));
                     }
@@ -750,86 +497,6 @@ namespace ProxyTiger
             return task;
         }
 
-        private Task WebBox()
-        {
-            string url = "http://proxy.web-box.ru/proxy-list";
-            Task task = new Task(() =>
-            {
-                var wc = new WebClient();
-                wc.Headers.Add("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                var source = wc.DownloadString(url);
-                foreach (
-                    Match match in
-                    Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:([0-9]{1,5})"))
-                {
-                    Application.Current.Dispatcher.Invoke((Action) (() =>
-                    {
-                        LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                        LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                    }));
-                }
-            });
-            return task;
-        }
-
-        private Task HOne()
-        {
-            string url = "http://notan.h1.ru/hack/xwww/proxy{0}.html";
-            Task task = new Task(() =>
-            {
-                for (int i = 1; i <= 10; i++)
-                {
-                    if (_stop)
-                        break;
-                    var wc = new WebClient();
-                    wc.Headers.Add("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                    var source = wc.DownloadString(url.Replace("{0}", i.ToString()));
-                    foreach (
-                        Match match in  
-                        Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:([0-9]{1,5})"))
-                    {
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
-                        {
-                            LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                            LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                        }));
-                    }
-                }
-            });
-            return task;
-        }
-
-        private Task WorkingProxies()
-        {
-            string url = "http://workingproxies.org/?page=";
-            Task task = new Task(() =>
-            {
-                for (int i = 0; i < 40; i++)
-                {
-                    if (_stop)
-                        break;
-                    var wc = new WebClient();
-                    wc.Headers.Add("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                    var source = wc.DownloadString(url + i);
-                    foreach (
-                        Match match in
-                        Regex.Matches(source,
-                            "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})[<\\/td>\\n]+.*<td>([0-9]{1,5})<"))
-                    {
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
-                        {
-                            LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                            LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                        }));
-                    }
-                }
-            });
-            return task;
-        }
-
         private Task SslProxies()
         {
             string url = "https://www.sslproxies.org/";
@@ -854,35 +521,7 @@ namespace ProxyTiger
             return task;
         }
 
-        private Task CloudProxies()
-        {
-            string url = "http://cloudproxies.com/proxylist/?page=";
-            Task task = new Task(() =>
-            {
-                for (int i = 1; i <= 33; i++)
-                {
-                    if (_stop)
-                        break;
-                    var wc = new WebClient();
-                    wc.Headers.Add("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                    var source = wc.DownloadString(url.Replace("{0}", i.ToString()));
-                    foreach (
-                        Match match in
-                        Regex.Matches(source,
-                            "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})[<\\/td>\\n]+.*<td>([0-9]{1,5})<"))
-                    {
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
-                        {
-                            LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                            LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                        }));
-                    }
-                }
-            });
-            return task;
-        }
-
+       
         private Task ProxyApe()
         {
             string url = "http://proxyape.com/";
@@ -906,33 +545,7 @@ namespace ProxyTiger
             return task;
         }
 
-        private Task ProxyListMe()
-        {
-            string url = "http://proxylist.me/proxys/index/";
-            Task task = new Task(() =>
-            {
-                for (int i = 0; i < 114; i++)
-                {
-                    if (_stop)
-                        break;
-                    var wc = new WebClient();
-                    wc.Headers.Add("User-Agent",
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
-                    var source = wc.DownloadString(url + i * 20);
-                    foreach (
-                        Match match in
-                        Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:([0-9]{1,5})"))
-                    {
-                        Application.Current.Dispatcher.Invoke((Action) (() =>
-                        {
-                            LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
-                            LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
-                        }));
-                    }
-                }
-            });
-            return task;
-        }
+        
 
         private Task OrcaTech()
         {
@@ -1041,6 +654,49 @@ namespace ProxyTiger
                 }
             });
         return task;
+        }
+
+        private Task UserProxy()
+        {
+            string[] urls =
+                File.ReadAllLines("sources.txt"); //The file will go here.
+            Task task = new Task(() =>
+            {
+                foreach (var url in urls)
+                {
+
+                    if (_stop)
+                        break;
+                    try
+                    {
+                        var wc = new WebClient();
+                        wc.Headers.Add("User-Agent",
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
+
+                       var source = wc.DownloadString(url);
+
+
+
+                        foreach (
+                            Match match in
+                            Regex.Matches(source, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\:([0-9]{1,5})"))
+                        {
+                            Application.Current.Dispatcher.Invoke((Action) (() =>
+                            {
+                                LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
+                                LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
+                            }));
+                        }
+                    }
+                    catch
+                        (System.Net.WebException)
+                   {
+                      continue;
+                   }
+
+                }
+            });
+            return task;
         }
 
         #endregion
