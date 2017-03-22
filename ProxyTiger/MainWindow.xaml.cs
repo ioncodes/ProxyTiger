@@ -700,5 +700,10 @@ namespace ProxyTiger
         }
 
         #endregion
+
+        private void BtnLoadSources_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+
+        }
     }
 }
