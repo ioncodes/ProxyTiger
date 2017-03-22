@@ -28,6 +28,7 @@ namespace ProxyTiger
         // http://sguru.org/files/proxy-source_sguru.txt
         private readonly List<Task> _tasks = new List<Task>();
         private bool _stop = false;
+        private string[] sources = {};
 
         public MainWindow()
         {
@@ -75,7 +76,7 @@ namespace ProxyTiger
                             sw.Start();
                             var status = CheckProxy(proxy.IP, proxy.Port);
                             sw.Stop();
-                            if(status != Proxy.ProxyType.Unknown)
+                            if (status != Proxy.ProxyType.Unknown)
                             {
                                 proxy.Ping = sw.Elapsed.Milliseconds.ToString();
                                 proxy.Type = status;
@@ -119,7 +120,7 @@ namespace ProxyTiger
 
         private Proxy.ProxyType IsProxyUp(WebProxy proxy)
         {
-            HttpWebRequest httpWebRequest = (HttpWebRequest)WebRequest.Create("http://samair.ru/anonymity-test/");
+            HttpWebRequest httpWebRequest = (HttpWebRequest) WebRequest.Create("http://samair.ru/anonymity-test/");
             try
             {
                 httpWebRequest.Timeout = 5000;
@@ -189,7 +190,8 @@ namespace ProxyTiger
             }).Start();
         }
 
-        private void BtnExportProxies_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        private void BtnExportProxies_Click(object sender,
+            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
             var proxies = (from Proxy proxy in LvProxies.Items select $"{proxy.IP}:{proxy.Port}").ToList();
             SaveFileDialog sfd = new SaveFileDialog
@@ -209,16 +211,23 @@ namespace ProxyTiger
             }
         }
 
-        private void BtnPasteProxies_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        private void BtnPasteProxies_Click(object sender,
+            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
-            var proxies = Clipboard.GetText().Split('\n').Select(proxy => proxy.Split(':')).Select(p => new Proxy(p[0], p[1])).ToList();
+            var proxies =
+                Clipboard.GetText()
+                    .Split('\n')
+                    .Select(proxy => proxy.Split(':'))
+                    .Select(p => new Proxy(p[0], p[1]))
+                    .ToList();
             foreach (var proxy in proxies)
             {
                 LvProxies.Items.Add(proxy);
             }
         }
 
-        private void BtnImportProxies_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        private void BtnImportProxies_Click(object sender,
+            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog
             {
@@ -521,7 +530,7 @@ namespace ProxyTiger
             return task;
         }
 
-       
+
         private Task ProxyApe()
         {
             string url = "http://proxyape.com/";
@@ -545,7 +554,7 @@ namespace ProxyTiger
             return task;
         }
 
-        
+
 
         private Task OrcaTech()
         {
@@ -594,14 +603,15 @@ namespace ProxyTiger
                 var source = wc.DownloadString(url);
                 var matches = Regex.Matches(source, @"<content[^C]*");
                 string content = "";
-                for(int i = 0; i < 3; i++) {
+                for (int i = 0; i < 3; i++)
+                {
                     content += matches[i].Value;
                 }
                 foreach (
                     Match match in
                     Regex.Matches(content, "([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}):([0-9]{1,5})"))
                 {
-                    Application.Current.Dispatcher.Invoke((Action)(() =>
+                    Application.Current.Dispatcher.Invoke((Action) (() =>
                     {
                         LvProxies.Items.Add(new Proxy(match.Groups[1].Value, match.Groups[2].Value));
                         LblProxyStatus.Text = $"Proxies: {LvProxies.Items.Count}";
@@ -653,16 +663,14 @@ namespace ProxyTiger
                     }
                 }
             });
-        return task;
+            return task;
         }
 
         private Task UserProxy()
         {
-            string[] urls =
-                File.ReadAllLines("sources.txt"); //The file will go here.
             Task task = new Task(() =>
             {
-                foreach (var url in urls)
+                foreach (var url in sources)
                 {
 
                     if (_stop)
@@ -673,7 +681,7 @@ namespace ProxyTiger
                         wc.Headers.Add("User-Agent",
                             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36");
 
-                       var source = wc.DownloadString(url);
+                        var source = wc.DownloadString(url);
 
 
 
@@ -690,9 +698,9 @@ namespace ProxyTiger
                     }
                     catch
                         (System.Net.WebException)
-                   {
-                      continue;
-                   }
+                    {
+                        continue;
+                    }
 
                 }
             });
@@ -701,9 +709,21 @@ namespace ProxyTiger
 
         #endregion
 
-        private void BtnLoadSources_Click(object sender, ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        private void BtnLoadSources_Click(object sender,
+            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
+            OpenFileDialog ofd = new OpenFileDialog
+            {
+                Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*",
+                RestoreDirectory = true
+            };
 
+            if (ofd.ShowDialog().HasValue.Equals(true))
+            {
+                sources = File.ReadAllLines(ofd.FileName);
+                new MsgBox("ProxyTiger", "Imported " + sources.Length + " sources.").ShowDialog();
+
+            }
         }
     }
 }
