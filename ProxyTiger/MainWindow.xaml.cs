@@ -130,6 +130,12 @@ namespace ProxyTiger
                     }).Start();
                 }
             }).Start();
+            if (working + notWorking == LvProxies.Items.Count)
+            {
+                new MsgBox("ProxyTiger", "Scanning has finished");
+                LblStatus.Text = "Idle";
+            }
+
         }
 
         private Proxy.ProxyType IsProxyUp(WebProxy proxy)
@@ -173,20 +179,20 @@ namespace ProxyTiger
             ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
             LblStatus.Text = "Scraping";
-            _tasks.Add(HideMyName()); //216 out of 785
-            _tasks.Add(SamairRu()); //144 out of 600
-            _tasks.Add(ProxyDb()); //90 out of 950
-            _tasks.Add(ProxySpy()); //67 out of 300
-            _tasks.Add(ProxyListOrg()); //45 out of 140
-            _tasks.Add(MorphIo()); //204 out of 2046
-            _tasks.Add(IpAddress()); //11 out of 50
-            _tasks.Add(MeilleurVpn()); //40 out of 180
-            _tasks.Add(HideMyIp()); //80 out of 445
+            //_tasks.Add(HideMyName()); //216 out of 785
+            //_tasks.Add(SamairRu()); //144 out of 600
+            //_tasks.Add(ProxyDb()); //90 out of 950
+            //_tasks.Add(ProxySpy()); //67 out of 300
+            //_tasks.Add(ProxyListOrg()); //45 out of 140
+            //_tasks.Add(MorphIo()); //204 out of 2046
+            //_tasks.Add(IpAddress()); //11 out of 50
+            //_tasks.Add(MeilleurVpn()); //40 out of 180
+            //_tasks.Add(HideMyIp()); //80 out of 445
             _tasks.Add(SslProxies()); //52 out of 100
-            _tasks.Add(ProxyApe()); //213 out of 3100
-            _tasks.Add(OrcaTech()); // 1200 out of 3000
-            _tasks.Add(SslProxies24()); // we need to only scrape from the day of scrapings posts not all time
-            _tasks.Add(AliveProxy()); //23 out of 223
+            //_tasks.Add(ProxyApe()); //213 out of 3100
+            //_tasks.Add(OrcaTech()); // 1200 out of 3000
+            //_tasks.Add(SslProxies24()); // we need to only scrape from the day of scrapings posts not all time
+            //_tasks.Add(AliveProxy()); //23 out of 223
             _tasks.Add(UserProxy());
             foreach (var task in _tasks)
             {
@@ -747,24 +753,38 @@ namespace ProxyTiger
             }
         }
 
-        private void RemoveDupes()
+        private void BtnRemoveDuplicates_Click(object sender,
+            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
-            string lastproxy = "";
-            foreach (string proxy in LvProxies.Items)
+            Proxy lastproxy;
+            int count = 0;
+            foreach (Proxy proxy in LvProxies.Items)
             {
-                if (proxy == lastproxy)
-                {
-                    LvProxies.Items.Remove(proxy);
-                }
+                //if (proxy == lastproxy)
+                //{
+                //    LvProxies.Items.Remove(proxy);
+                //    count++;
+                //}
             }
+            new MsgBox("ProxyTiger", "You removed " + count + " duplicates.");
         }
 
-        private void RemoveNonWorking()
+        private void BtnRemoveNotWorking_Click(object sender,
+            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
+            if (LblStatus.Text != "Idle")
+            {
+                new MsgBox("ProxyTiger", "ProxyTiger must be stopped before editing.");
+                return;
+            }
+
+            int count = 0;
             foreach (string proxy in notworkingProxies)
             {
                 LvProxies.Items.Remove(proxy);
+                count++;
             }
+            new MsgBox("ProxyTiger", "You removed " + count + " not working proxies.");
         }
     }
 }

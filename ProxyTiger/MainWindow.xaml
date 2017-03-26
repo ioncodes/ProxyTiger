@@ -33,6 +33,10 @@
                 <ribbon:Group Label="General">
                     <ribbon:Button x:Name="BtnCheck" ImageSourceLarge="Resources/heart.png" Label="Check" Margin="5,5,5,0" Id="" Click="BtnCheck_Click"/>
                 </ribbon:Group>
+                <ribbon:Group Label="Editing">
+                    <ribbon:Button x:Name="BtnRemoveDuplicates" ImageSourceLarge="Resources/paste.png" Label="Remove Duplicates" Margin="5,5,5,0" Id="" Click="BtnRemoveDuplicates_Click"/>
+                    <ribbon:Button x:Name="BtnRemoveNotWorking" ImageSourceLarge="Resources/paste.png" Label="Remove Non-Working" Margin="5,5,5,0" Id="" Click="BtnRemoveNotWorking_Click"/>
+                </ribbon:Group>
             </ribbon:Tab>
             <ribbon:Tab Label="Settings">
                 <ribbon:Group Label="Checker" IsCollapsible="True">
