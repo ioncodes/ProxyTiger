@@ -10,8 +10,10 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Xml.Serialization;
+using ActiproSoftware.Windows.Controls.Ribbon.Controls;
 using ActiproSoftware.Windows.Themes;
 using Microsoft.Win32;
 using Color = System.Drawing.Color;
@@ -29,6 +31,9 @@ namespace ProxyTiger
         private readonly List<Task> _tasks = new List<Task>();
         private bool _stop = false;
         private string[] sources = {};
+        private static List<string> workingProxies = new List<string>();
+        private static List<string> notworkingProxies = new List<string>();
+        private string statType;
 
         public MainWindow()
         {
@@ -56,9 +61,16 @@ namespace ProxyTiger
         private void BtnCheck_Click(object sender,
             ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
+            if (!LblStatus.Text.Equals("Idle"))
+            {
+                new MsgBox("ProxyTiger", "You can't check while ProxyTiger is running").Show();
+                return;
+            }
+
             LblStatus.Text = "Scanning";
             int working = 0;
             int notWorking = 0;
+            
             new Thread(() =>
             {
                 int threads = 0;
@@ -81,11 +93,13 @@ namespace ProxyTiger
                                 proxy.Ping = sw.Elapsed.Milliseconds.ToString();
                                 proxy.Type = status;
                                 proxy.Color = new SolidColorBrush(Colors.Green);
+                                workingProxies.Add(proxy.IP+":"+proxy.Port.ToString());
                                 working++;
                             }
                             else
                             {
                                 proxy.Color = new SolidColorBrush(Colors.Red);
+                                notworkingProxies.Add(proxy.IP + ":" + proxy.Port.ToString());
                                 notWorking++;
                             }
                             proxy.Status = status != Proxy.ProxyType.Unknown
@@ -132,7 +146,7 @@ namespace ProxyTiger
                 {
                     if (text2.Contains(">high-anonymous (elite) proxy</"))
                     {
-                        return Proxy.ProxyType.HighAnonymous;
+                        return Proxy.ProxyType.HighAnonymous; //possibly change names to what people recongnize elite,anon,transparent
                     }
                     else
                     {
@@ -190,10 +204,10 @@ namespace ProxyTiger
             }).Start();
         }
 
-        private void BtnExportProxies_Click(object sender,
+        private void BtnExportProxies_Click(object sender, //add another button for working/all
             ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
-            var proxies = (from Proxy proxy in LvProxies.Items select $"{proxy.IP}:{proxy.Port}").ToList();
+            //var proxies = (from Proxy proxy in LvProxies.Items select $"{proxy.IP}:{proxy.Port}").ToList();
             SaveFileDialog sfd = new SaveFileDialog
             {
                 InitialDirectory = @"C:\",
@@ -203,11 +217,18 @@ namespace ProxyTiger
                 FilterIndex = 1,
                 RestoreDirectory = true
             };
-
+            
             if (sfd.ShowDialog() == true)
             {
-                File.WriteAllLines(sfd.FileName, proxies);
-                new MsgBox("ProxyTiger", "Wrote successfully " + proxies.Count + " proxies.").Show();
+                if (workingProxies.Count >= 1)
+                {
+                    File.WriteAllLines(sfd.FileName, workingProxies);
+                    new MsgBox("ProxyTiger", "Wrote successfully " + workingProxies.Count + " working proxies.").Show();
+                }
+                else
+                {
+                    new MsgBox("ProxyTiger", "You haven't checked for working proxies. \nplease check your list then try again.").Show();
+                }
             }
         }
 
@@ -723,6 +744,26 @@ namespace ProxyTiger
                 sources = File.ReadAllLines(ofd.FileName);
                 new MsgBox("ProxyTiger", "Imported " + sources.Length + " sources.").ShowDialog();
 
+            }
+        }
+
+        private void RemoveDupes()
+        {
+            string lastproxy = "";
+            foreach (string proxy in LvProxies.Items)
+            {
+                if (proxy == lastproxy)
+                {
+                    LvProxies.Items.Remove(proxy);
+                }
+            }
+        }
+
+        private void RemoveNonWorking()
+        {
+            foreach (string proxy in notworkingProxies)
+            {
+                LvProxies.Items.Remove(proxy);
             }
         }
     }

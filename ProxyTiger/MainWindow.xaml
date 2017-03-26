@@ -36,7 +36,6 @@
             </ribbon:Tab>
             <ribbon:Tab Label="Settings">
                 <ribbon:Group Label="Checker" IsCollapsible="True">
-                    <ribbon:CheckBox x:Name="CbCheckOnline" Label="Check proxies online" IsChecked="False" Margin="5,5,0,0"/>
                     <Slider Width="103" Height="20" Margin="5,5,0,0"/>
                     <ribbon:Button x:Name="BtnLoadSources" Label="Load Sources" Margin="5,5,0,0" Click="BtnLoadSources_Click">
                         <ribbon:Button.ImageSourceSmall>
