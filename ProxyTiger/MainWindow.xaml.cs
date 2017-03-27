@@ -67,7 +67,11 @@ namespace ProxyTiger
         {
             if (_runningJob == Job.Idle)
             {
+                LockControls();
                 LblStatus.Text = "Scanning";
+                BtnCheck.IsEnabled = false;
+                BtnScrape.IsEnabled = false;
+                BtnStop.IsEnabled = false;
                 _runningJob = Job.Checking;
                 int working = 0;
                 int notWorking = 0;
@@ -136,6 +140,7 @@ namespace ProxyTiger
                     {
                         new MsgBox("ProxyTiger", "Scanning has finished").ShowDialog();
                         LblStatus.Text = "Idle";
+                        UnlockControls();
                     }));
                     _runningJob = Job.Idle;
                 });
@@ -188,21 +193,22 @@ namespace ProxyTiger
         private void BtnScrape_Click(object sender,
             ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
+            LockControls(true);
             LblStatus.Text = "Scraping";
             _runningJob = Job.Scraping;
-            //_tasks.Add(HideMyName()); //216 out of 785
+            _tasks.Add(HideMyName()); //216 out of 785
             _tasks.Add(SamairRu()); //144 out of 600
             //_tasks.Add(ProxyDb()); //90 out of 950
             //_tasks.Add(ProxySpy()); //67 out of 300
             //_tasks.Add(ProxyListOrg()); //45 out of 140
-            //_tasks.Add(MorphIo()); //204 out of 2046
+            _tasks.Add(MorphIo()); //204 out of 2046
             //_tasks.Add(IpAddress()); //11 out of 50
             //_tasks.Add(MeilleurVpn()); //40 out of 180
             //_tasks.Add(HideMyIp()); //80 out of 445
             //_tasks.Add(SslProxies()); //52 out of 100
             //_tasks.Add(ProxyApe()); //213 out of 3100
-            //_tasks.Add(OrcaTech()); // 1200 out of 3000
-            //_tasks.Add(SslProxies24()); // we need to only scrape from the day of scrapings posts not all time
+            _tasks.Add(OrcaTech()); // 1200 out of 3000
+            _tasks.Add(SslProxies24()); // we need to only scrape from the day of scrapings posts not all time
             //_tasks.Add(AliveProxy()); //23 out of 223
             _tasks.Add(UserProxy());
             foreach (var task in _tasks)
@@ -218,6 +224,7 @@ namespace ProxyTiger
                     LblStatus.Text = "Idle";
                     _runningJob = Job.Idle;
                     new MsgBox("ProxyTiger", "Scraped " + LvProxies.Items.Count + " proxies.").ShowDialog();
+                    UnlockControls(true);
                 }));
             }).Start();
         }
@@ -336,6 +343,36 @@ namespace ProxyTiger
             {
                 new MsgBox("ProxyTiger", "ProxyTiger is still running!").ShowDialog();
             }
+        }
+
+        private void LockControls(bool isScrape = false)
+        {
+            BtnCheck.IsEnabled = false;
+            BtnScrape.IsEnabled = false;
+            if(!isScrape)
+                BtnStop.IsEnabled = false;
+            BtnCopyProxies.IsEnabled = false;
+            BtnPasteProxies.IsEnabled = false;
+            BtnExportProxies.IsEnabled = false;
+            BtnImportProxies.IsEnabled = false;
+            BtnRemoveDuplicates.IsEnabled = false;
+            BtnRemoveNotWorking.IsEnabled = false;
+            BtnLoadSources.IsEnabled = false;
+        }
+
+        private void UnlockControls(bool isScrape = false)
+        {
+            BtnCheck.IsEnabled = true;
+            BtnScrape.IsEnabled = true;
+            if(!isScrape)
+                BtnStop.IsEnabled = true;
+            BtnCopyProxies.IsEnabled = true;
+            BtnPasteProxies.IsEnabled = true;
+            BtnExportProxies.IsEnabled = true;
+            BtnImportProxies.IsEnabled = true;
+            BtnRemoveDuplicates.IsEnabled = true;
+            BtnRemoveNotWorking.IsEnabled = true;
+            BtnLoadSources.IsEnabled = true;
         }
 
         #endregion
