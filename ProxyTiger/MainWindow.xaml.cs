@@ -27,13 +27,17 @@ namespace ProxyTiger
     {
         #region UI
 
-        // http://sguru.org/files/proxy-source_sguru.txt
         private readonly List<Task> _tasks = new List<Task>();
         private bool _stop = false;
-        private string[] sources = {};
-        private static List<string> workingProxies = new List<string>();
-        private static List<string> notworkingProxies = new List<string>();
-        private string statType;
+        private string[] _sources = {};
+
+        private enum Job
+        {
+            Checking,
+            Scraping,
+            Idle
+        }
+        private Job _runningJob = Job.Idle;
 
         public MainWindow()
         {
@@ -61,81 +65,87 @@ namespace ProxyTiger
         private void BtnCheck_Click(object sender,
             ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
-            if (!LblStatus.Text.Equals("Idle"))
+            if (_runningJob == Job.Idle)
             {
-                new MsgBox("ProxyTiger", "You can't check while ProxyTiger is running").Show();
-                return;
-            }
-
-            LblStatus.Text = "Scanning";
-            int working = 0;
-            int notWorking = 0;
-            
-            new Thread(() =>
-            {
-                int threads = 0;
-                foreach (Proxy proxy in LvProxies.Items)
+                LblStatus.Text = "Scanning";
+                _runningJob = Job.Checking;
+                int working = 0;
+                int notWorking = 0;
+                new Thread(() =>
                 {
-                    while (threads >= 200)
+                    int threads = 0;
+                    foreach (Proxy proxy in LvProxies.Items)
                     {
-                    }
-                    new Thread(() =>
-                    {
-                        try
+                        while (threads >= 200)
                         {
-                            threads++;
-                            Stopwatch sw = new Stopwatch();
-                            sw.Start();
-                            var status = CheckProxy(proxy.IP, proxy.Port);
-                            sw.Stop();
-                            if (status != Proxy.ProxyType.Unknown)
-                            {
-                                proxy.Ping = sw.Elapsed.Milliseconds.ToString();
-                                proxy.Type = status;
-                                proxy.Color = new SolidColorBrush(Colors.Green);
-                                workingProxies.Add(proxy.IP+":"+proxy.Port.ToString());
-                                working++;
-                            }
-                            else
-                            {
-                                proxy.Color = new SolidColorBrush(Colors.Red);
-                                notworkingProxies.Add(proxy.IP + ":" + proxy.Port.ToString());
-                                notWorking++;
-                            }
-                            proxy.Status = status != Proxy.ProxyType.Unknown
-                                ? Proxy.StatusType.Working
-                                : Proxy.StatusType.NotWorking;
                         }
-                        catch
-                        {
-                            proxy.Status = Proxy.StatusType.NotWorking;
-                            notWorking++;
-                        }
-                        finally
+                        new Thread(() =>
                         {
                             try
                             {
-                                Application.Current.Dispatcher.Invoke(
-                                    (Action)
-                                    (() =>
-                                    {
-                                        LblAdditionalInfo.Text = $"Working: {working}, Not Working: {notWorking}";
-                                    }));
+                                threads++;
+                                Stopwatch sw = new Stopwatch();
+                                sw.Start();
+                                var status = CheckProxy(proxy.IP, proxy.Port);
+                                sw.Stop();
+                                if (status != Proxy.ProxyType.Unknown)
+                                {
+                                    proxy.Ping = sw.Elapsed.Milliseconds.ToString();
+                                    proxy.Type = status;
+                                    proxy.Color = new SolidColorBrush(Colors.Green);
+                                    working++;
+                                }
+                                else
+                                {
+                                    proxy.Color = new SolidColorBrush(Colors.Red);
+                                    notWorking++;
+                                }
+                                proxy.Status = status != Proxy.ProxyType.Unknown
+                                    ? Proxy.StatusType.Working
+                                    : Proxy.StatusType.NotWorking;
+                                working++;
                             }
                             catch
                             {
+                                proxy.Status = Proxy.StatusType.NotWorking;
+                                notWorking++;
                             }
-                            threads--;
-                        }
-                    }).Start();
-                }
-            }).Start();
-            if (working + notWorking == LvProxies.Items.Count)
-            {
-                new MsgBox("ProxyTiger", "Scanning has finished");
-                LblStatus.Text = "Idle";
+                            finally
+                            {
+                                try
+                                {
+                                    Application.Current.Dispatcher.Invoke(
+                                        (Action)
+                                        (() =>
+                                        {
+                                            LblAdditionalInfo.Text = $"Working: {working}, Not Working: {notWorking}";
+                                        }));
+                                }
+                                catch
+                                {
+                                }
+                                threads--;
+                            }
+                        }).Start();
+                    }
+                }).Start();
+                var t = new Thread(() =>
+                {
+                    while (working + notWorking != LvProxies.Items.Count) ;
+                    Application.Current.Dispatcher.Invoke((Action) (() =>
+                    {
+                        new MsgBox("ProxyTiger", "Scanning has finished").ShowDialog();
+                        LblStatus.Text = "Idle";
+                    }));
+                    _runningJob = Job.Idle;
+                });
+                t.SetApartmentState(ApartmentState.STA);
+                t.Start();
             }
-
+            else
+            {
+                new MsgBox("ProxyTiger", "ProxyTiger is still scraping").ShowDialog();
+            }
         }
 
         private Proxy.ProxyType IsProxyUp(WebProxy proxy)
@@ -179,8 +189,9 @@ namespace ProxyTiger
             ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
             LblStatus.Text = "Scraping";
+            _runningJob = Job.Scraping;
             //_tasks.Add(HideMyName()); //216 out of 785
-            //_tasks.Add(SamairRu()); //144 out of 600
+            _tasks.Add(SamairRu()); //144 out of 600
             //_tasks.Add(ProxyDb()); //90 out of 950
             //_tasks.Add(ProxySpy()); //67 out of 300
             //_tasks.Add(ProxyListOrg()); //45 out of 140
@@ -188,7 +199,7 @@ namespace ProxyTiger
             //_tasks.Add(IpAddress()); //11 out of 50
             //_tasks.Add(MeilleurVpn()); //40 out of 180
             //_tasks.Add(HideMyIp()); //80 out of 445
-            _tasks.Add(SslProxies()); //52 out of 100
+            //_tasks.Add(SslProxies()); //52 out of 100
             //_tasks.Add(ProxyApe()); //213 out of 3100
             //_tasks.Add(OrcaTech()); // 1200 out of 3000
             //_tasks.Add(SslProxies24()); // we need to only scrape from the day of scrapings posts not all time
@@ -205,15 +216,16 @@ namespace ProxyTiger
                 Application.Current.Dispatcher.Invoke((Action) (() =>
                 {
                     LblStatus.Text = "Idle";
+                    _runningJob = Job.Idle;
                     new MsgBox("ProxyTiger", "Scraped " + LvProxies.Items.Count + " proxies.").ShowDialog();
                 }));
             }).Start();
         }
 
-        private void BtnExportProxies_Click(object sender, //add another button for working/all
+        private void BtnExportProxies_Click(object sender,
             ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
         {
-            //var proxies = (from Proxy proxy in LvProxies.Items select $"{proxy.IP}:{proxy.Port}").ToList();
+            var proxies = (from Proxy proxy in LvProxies.Items select $"{proxy.IP}:{proxy.Port}").ToList();
             SaveFileDialog sfd = new SaveFileDialog
             {
                 InitialDirectory = @"C:\",
@@ -226,15 +238,8 @@ namespace ProxyTiger
             
             if (sfd.ShowDialog() == true)
             {
-                if (workingProxies.Count >= 1)
-                {
-                    File.WriteAllLines(sfd.FileName, workingProxies);
-                    new MsgBox("ProxyTiger", "Wrote successfully " + workingProxies.Count + " working proxies.").Show();
-                }
-                else
-                {
-                    new MsgBox("ProxyTiger", "You haven't checked for working proxies. \nplease check your list then try again.").Show();
-                }
+                File.WriteAllLines(sfd.FileName, proxies);
+                new MsgBox("ProxyTiger", "Wrote successfully " + proxies.Count + " proxies.").Show();
             }
         }
 
@@ -278,6 +283,58 @@ namespace ProxyTiger
                     LvProxies.Items.Add(new Proxy(p[0], p[1]));
                     new MsgBox("ProxyTiger", "Imported " + lines.Length + " proxies.").ShowDialog();
                 }
+            }
+        }
+
+        private void BtnLoadSources_Click(object sender,
+    ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog
+            {
+                Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*",
+                RestoreDirectory = true
+            };
+
+            if (ofd.ShowDialog().HasValue.Equals(true))
+            {
+                _sources = File.ReadAllLines(ofd.FileName);
+                new MsgBox("ProxyTiger", "Imported " + _sources.Length + " sources.").ShowDialog();
+
+            }
+        }
+
+        private void BtnRemoveDuplicates_Click(object sender,
+            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+            var proxies = LvProxies.Items.OfType<Proxy>().ToList().GroupBy(x => x.IP + ":" + x.Port).Select(x => x.First()).ToList();
+            new MsgBox("ProxyTiger", "You removed " + (LvProxies.Items.Count - proxies.Count) + " duplicates.").ShowDialog();
+            LblProxyStatus.Text = $"Proxies: {proxies.Count}"; ;
+            LvProxies.Items.Clear();
+            foreach (Proxy proxy in proxies)
+            {
+                LvProxies.Items.Add(proxy);
+            }
+        }
+
+        private void BtnRemoveNotWorking_Click(object sender,
+            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
+        {
+            if (_runningJob == Job.Idle)
+            {
+                var proxies =
+                    LvProxies.Items.OfType<Proxy>().Where(proxy => proxy.Status != Proxy.StatusType.NotWorking).ToList();
+                new MsgBox("ProxyTiger",
+                    "You removed " + (LvProxies.Items.Count - proxies.Count) + " not working proxies.").ShowDialog();
+                LvProxies.Items.Clear();
+                foreach (Proxy proxy in proxies)
+                {
+                    LvProxies.Items.Add(proxy);
+                }
+                LblAdditionalInfo.Text = $"Working: {proxies.Count}, Not Working: 0";
+            }
+            else
+            {
+                new MsgBox("ProxyTiger", "ProxyTiger is still running!").ShowDialog();
             }
         }
 
@@ -697,7 +754,7 @@ namespace ProxyTiger
         {
             Task task = new Task(() =>
             {
-                foreach (var url in sources)
+                foreach (var url in _sources)
                 {
 
                     if (_stop)
@@ -735,56 +792,5 @@ namespace ProxyTiger
         }
 
         #endregion
-
-        private void BtnLoadSources_Click(object sender,
-            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
-        {
-            OpenFileDialog ofd = new OpenFileDialog
-            {
-                Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*",
-                RestoreDirectory = true
-            };
-
-            if (ofd.ShowDialog().HasValue.Equals(true))
-            {
-                sources = File.ReadAllLines(ofd.FileName);
-                new MsgBox("ProxyTiger", "Imported " + sources.Length + " sources.").ShowDialog();
-
-            }
-        }
-
-        private void BtnRemoveDuplicates_Click(object sender,
-            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
-        {
-            Proxy lastproxy;
-            int count = 0;
-            foreach (Proxy proxy in LvProxies.Items)
-            {
-                //if (proxy == lastproxy)
-                //{
-                //    LvProxies.Items.Remove(proxy);
-                //    count++;
-                //}
-            }
-            new MsgBox("ProxyTiger", "You removed " + count + " duplicates.");
-        }
-
-        private void BtnRemoveNotWorking_Click(object sender,
-            ActiproSoftware.Windows.Controls.Ribbon.Controls.ExecuteRoutedEventArgs e)
-        {
-            if (LblStatus.Text != "Idle")
-            {
-                new MsgBox("ProxyTiger", "ProxyTiger must be stopped before editing.");
-                return;
-            }
-
-            int count = 0;
-            foreach (string proxy in notworkingProxies)
-            {
-                LvProxies.Items.Remove(proxy);
-                count++;
-            }
-            new MsgBox("ProxyTiger", "You removed " + count + " not working proxies.");
-        }
     }
 }
