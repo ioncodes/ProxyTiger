@@ -34,14 +34,25 @@
                     <ribbon:Button x:Name="BtnCheck" ImageSourceLarge="Resources/heart.png" Label="Check" Margin="5,5,5,0" Id="" Click="BtnCheck_Click"/>
                 </ribbon:Group>
                 <ribbon:Group Label="Editing">
-                    <ribbon:Button x:Name="BtnRemoveDuplicates" ImageSourceLarge="Resources/paste.png" Label="Remove Duplicates" Margin="5,5,5,0" Id="" Click="BtnRemoveDuplicates_Click"/>
-                    <ribbon:Button x:Name="BtnRemoveNotWorking" ImageSourceLarge="Resources/paste.png" Label="Remove Non-Working" Margin="5,5,5,0" Id="" Click="BtnRemoveNotWorking_Click"/>
+                    <ribbon:Button x:Name="BtnRemoveDuplicates" Label="Remove Duplicates" Margin="5,5,5,0" Id="" Click="BtnRemoveDuplicates_Click">
+                        <ribbon:Button.ImageSourceLarge>
+                            <BitmapImage UriSource="/ProxyTiger;component/Resources/check.png" UriCachePolicy="{x:Null}"/>
+                        </ribbon:Button.ImageSourceLarge>
+                    </ribbon:Button>
+                    <ribbon:Button x:Name="BtnRemoveNotWorking" Label="Remove Non-Working" Margin="5,5,5,0" Id="" Click="BtnRemoveNotWorking_Click">
+                        <ribbon:Button.ImageSourceLarge>
+                            <BitmapImage UriSource="/ProxyTiger;component/Resources/working.png" UriCachePolicy="{x:Null}"/>
+                        </ribbon:Button.ImageSourceLarge>
+                    </ribbon:Button>
                 </ribbon:Group>
             </ribbon:Tab>
             <ribbon:Tab Label="Settings">
                 <ribbon:Group Label="Checker" IsCollapsible="True">
                     <Slider Width="103" Height="20" Margin="5,5,0,0"/>
                     <ribbon:Button x:Name="BtnLoadSources" Label="Load Sources" Margin="5,5,0,0" Click="BtnLoadSources_Click">
+                        <ribbon:Button.ImageSourceLarge>
+                            <BitmapImage UriSource="/ProxyTiger;component/Resources/list.png" UriCachePolicy="{x:Null}"/>
+                        </ribbon:Button.ImageSourceLarge>
                         <ribbon:Button.ImageSourceSmall>
                             <BitmapImage UriSource="pack://application:,,,/ActiproSoftware.Ribbon.Wpf;component/Products/Ribbon/Images/ButtonDefault32.png" UriCachePolicy="{x:Null}"/>
                         </ribbon:Button.ImageSourceSmall>
