@@ -107,7 +107,7 @@ namespace ProxyTiger
                                 proxy.Status = status != Proxy.ProxyType.Unknown
                                     ? Proxy.StatusType.Working
                                     : Proxy.StatusType.NotWorking;
-                                working++;
+                                //working++;
                             }
                             catch
                             {
@@ -158,7 +158,7 @@ namespace ProxyTiger
             HttpWebRequest httpWebRequest = (HttpWebRequest) WebRequest.Create("http://samair.ru/anonymity-test/");
             try
             {
-                httpWebRequest.Timeout = 5000;
+                httpWebRequest.Timeout = 2000;
                 httpWebRequest.Proxy = proxy;
                 HttpWebResponse httpWebResponse = (HttpWebResponse) httpWebRequest.GetResponse();
                 StreamReader streamReader = new StreamReader(httpWebResponse.GetResponseStream());
@@ -207,7 +207,7 @@ namespace ProxyTiger
             //_tasks.Add(HideMyIp()); //80 out of 445
             //_tasks.Add(SslProxies()); //52 out of 100
             //_tasks.Add(ProxyApe()); //213 out of 3100
-            _tasks.Add(OrcaTech()); // 1200 out of 3000
+            //_tasks.Add(OrcaTech()); // 1200 out of 3000
             _tasks.Add(SslProxies24()); // we need to only scrape from the day of scrapings posts not all time
             //_tasks.Add(AliveProxy()); //23 out of 223
             _tasks.Add(UserProxy());
